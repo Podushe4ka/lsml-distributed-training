@@ -31,3 +31,21 @@ uv run torchrun \
     -m openai-community/gpt2 \
     -e test01-ddp
 ```
+
+Обучаем Llama-1.1B в DP+TP сетапе:
+```bash
+export TORCHELASTIC_ERROR_FILE=error.json; \
+export OMP_NUM_THREADS=1; \
+uv run torchrun \
+    --standalone \
+    --nproc-per-node gpu \
+    --redirects 3 \
+    --log-dir logs \
+    scripts/train_dp_tp.py \
+    --experiment-name tp-llama-1b \
+    -d tatsu-lab/alpaca \
+    -m TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+    --tp 4 \
+    --batch-size 16 \
+    --num-epochs 5
+```

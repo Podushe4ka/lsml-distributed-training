@@ -13,3 +13,13 @@ def rank0_first() -> Generator:
     if rank > 0:
         yield
     dist.barrier()
+
+
+@contextmanager
+def rank_ordered(*, should_go_first: bool) -> Generator:
+    if should_go_first:
+        yield
+    dist.barrier()
+    if not should_go_first:
+        yield
+    dist.barrier()

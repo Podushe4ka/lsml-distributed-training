@@ -39,6 +39,7 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "C408",    # Unnecessary `dict()` call (rewrite as a literal)
     "D100",    # Missing docstring in public module
     "D101",    # Missing docstring in public class
     "D102",    # Missing docstring in public method
@@ -53,15 +54,25 @@ ignore = [
     "FBT001",  # Boolean-typed positional argument in function definition
     "FBT002",  # Boolean default positional argument in function definition
     "PLR0913", # Too many arguments in function definition
+    "S101",    # Use of assert
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "RUF001",  # Cyrillic vs latin letters
     "RUF002",  # Cyrillic vs latin letters
     "RUF003",  # Cyrillic vs latin letters
+    "ERA001",  # Found commented-out code
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "F401", # Unused imports
+]
+"common/llama.py" = [
+    "ANN",
+    "D",
+    "PGH",
+    "N",
+    "PLR",
+    "RET",
 ]
 "scripts/*.py" = [
     "INP001", # File is part of an implicit namespace package
