@@ -1,0 +1,66 @@
+Metadata-Version: 2.4
+Name: lsml-distributed-training
+Version: 0.1.0
+Author-email: Dmitry Nesterov <dnesterovand@ozon.ru>
+Requires-Python: ==3.10.*
+Description-Content-Type: text/markdown
+Requires-Dist: datasets==4.1.1
+Requires-Dist: huggingface-hub>=0.36.2
+Requires-Dist: jupyterlab>=4.5.6
+Requires-Dist: mypy>=1.18.2
+Requires-Dist: ruff>=0.14.2
+Requires-Dist: torch==2.8.0
+Requires-Dist: tqdm>=4.67.3
+Requires-Dist: transformers==4.57.0
+
+# LSML: Distributed training
+
+Код для семинаров по распределенному обучению LLM в рамках курса Large Scale ML.
+
+Сетап:
+```bash
+source .env && make vendor
+```
+
+В качестве примера будем учить GPT2 (124M параметров).
+
+Запуск обучения на одной карте:
+```bash
+CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py \
+    -d tatsu-lab/alpaca \
+    -m openai-community/gpt2 \
+    -e test01-single
+```
+
+На 4 картах в DDP:
+```bash
+export TORCHELASTIC_ERROR_FILE=error.json; \
+export OMP_NUM_THREADS=1; \
+export CUDA_VISIBLE_DEVICES=0,1,2,3; \
+uv run torchrun \
+    --nproc-per-node gpu \
+    --redirects 3 \
+    --log-dir logs \
+    scripts/train_ddp.py \
+    -d tatsu-lab/alpaca \
+    -m openai-community/gpt2 \
+    -e test01-ddp
+```
+
+Обучаем Llama-1.1B в DP+TP сетапе:
+```bash
+export TORCHELASTIC_ERROR_FILE=error.json; \
+export OMP_NUM_THREADS=1; \
+uv run torchrun \
+    --standalone \
+    --nproc-per-node gpu \
+    --redirects 3 \
+    --log-dir logs \
+    scripts/train_dp_tp.py \
+    --experiment-name tp-llama-1b \
+    -d tatsu-lab/alpaca \
+    -m TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+    --tp 4 \
+    --batch-size 16 \
+    --num-epochs 5
+```
