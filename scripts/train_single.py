@@ -36,6 +36,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument('--log-freq', default=10, type=int)
     parser.add_argument('--ckpt-freq', default=500, type=int)
     parser.add_argument('-s', '--seq-length', default=1024, type=int)
+    parser.add_argument('--precision', choices=('fp32', 'bf16'), default='bf16')
+    parser.add_argument('--activation-checkpointing', action='store_true')
+    parser.add_argument('--grad-accumulation-steps', type=int, default=1)
     return parser
 
 
@@ -49,7 +52,7 @@ def main(args: argparse.Namespace) -> None:  # noqa: C901, PLR0915, PLR0912
     LOGGER.debug(args)
 
     device = torch.device('cuda')
-    dtype = torch.bfloat16
+    dtype = torch.bfloat16 if args.precision == 'bf16' else torch.float32
 
     torch.manual_seed(args.seed)
 
@@ -59,6 +62,9 @@ def main(args: argparse.Namespace) -> None:  # noqa: C901, PLR0915, PLR0912
         config = AutoConfig.from_pretrained(args.model_name, use_cache=False)
         model = AutoModelForCausalLM.from_config(config, dtype=dtype)
     LOGGER.info(f'Training {sum(p.numel() for p in model.parameters())} model parameters')
+    
+    if args.activation_checkpointing:
+        model.gradient_checkpointing_enable()
 
     model = torch.compile(model)  # type: ignore[assignment]
 
@@ -96,6 +102,7 @@ def main(args: argparse.Namespace) -> None:  # noqa: C901, PLR0915, PLR0912
     LOGGER.info(f'{len(dataloader)} train batches per epoch, {len(eval_dataloader)} eval batches per epoch')
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    optimizer.zero_grad(set_to_none=True)
 
     # NOTE: T_max and eta_min were arbitrarily chosen
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=1000, eta_min=args.lr * 1e-2)
@@ -159,50 +166,53 @@ def main(args: argparse.Namespace) -> None:  # noqa: C901, PLR0915, PLR0912
                 del batch
 
             with timers['backward']:
-                outputs.loss.backward()
+                loss = outputs.loss / args.grad_accumulation_steps
+                loss.backward()
 
-            with timers['update']:
-                optimizer.step()
-                lr_scheduler.step()
-                # NOTE: set_to_none=True will de-allocate the gradients, saving us some memory
-                optimizer.zero_grad(set_to_none=True)
+            do_update = ((i_step + 1) % args.grad_accumulation_steps == 0) or (i_step + 1 == len(dataloader))
 
-            state['global_step'] += 1
+            if (do_update):
+                with timers['update']:
+                    optimizer.step()
+                    lr_scheduler.step()
+                    # NOTE: set_to_none=True will de-allocate the gradients, saving us some memory
+                    optimizer.zero_grad(set_to_none=True)
+
+                state['global_step'] += 1
+                state['running_loss'] += outputs.loss.item()
+                progress_bar.update(args.grad_accumulation_steps)
+
+                if state['global_step'] % args.log_freq == 0:
+                    tok_per_step = args.batch_size * args.seq_length * args.grad_accumulation_steps
+                    ms_per_step = sum(t.avg_elapsed_ms() for t in timers.values())
+                    info = {
+                        'global_step': state['global_step'],
+                        'lr': lr_scheduler.get_last_lr()[0],
+                        'running_loss': state['running_loss'] / args.log_freq,
+                        'epoch': state['epoch'],
+                        'epoch_progress': state['epoch_step'] / len(dataloader),
+                        'num_batches_remaining': len(dataloader) - i_step,
+                        **get_mem_stats(device),
+                        'tokens_per_s': 1000 * tok_per_step / ms_per_step,
+                        'time/total': ms_per_step,
+                        **{f'time/{k}': timer.avg_elapsed_ms() for k, timer in timers.items()},
+                    }
+
+                    LOGGER.info(info)
+
+                    torch.cuda.reset_peak_memory_stats(device)
+                    state['running_loss'] = 0
+                    for t in timers.values():
+                        t.reset()
+
+                if is_experiment and state['global_step'] % args.ckpt_freq == 0:
+                    LOGGER.info('Saving checkpoint.')
+                    torch.save(optimizer.state_dict(), exp_dir / 'optimizer.pt')
+                    torch.save(model.state_dict(), exp_dir / 'model.pt')
+                    torch.save(lr_scheduler.state_dict(), exp_dir / 'lr_scheduler.pt')
+                    with (exp_dir / 'state.json').open('w') as fp:
+                        json.dump(state, fp)
             state['epoch_step'] += 1
-            state['running_loss'] += outputs.loss.item()
-            progress_bar.update(1)
-
-            if state['global_step'] % args.log_freq == 0:
-                tok_per_step = args.batch_size * args.seq_length
-                ms_per_step = sum(t.avg_elapsed_ms() for t in timers.values())
-                info = {
-                    'global_step': state['global_step'],
-                    'lr': lr_scheduler.get_last_lr()[0],
-                    'running_loss': state['running_loss'] / args.log_freq,
-                    'epoch': state['epoch'],
-                    'epoch_progress': state['epoch_step'] / len(dataloader),
-                    'num_batches_remaining': len(dataloader) - i_step,
-                    **get_mem_stats(device),
-                    'tokens_per_s': 1000 * tok_per_step / ms_per_step,
-                    'time/total': ms_per_step,
-                    **{f'time/{k}': timer.avg_elapsed_ms() for k, timer in timers.items()},
-                }
-
-                LOGGER.info(info)
-
-                torch.cuda.reset_peak_memory_stats(device)
-                state['running_loss'] = 0
-                for t in timers.values():
-                    t.reset()
-
-            if is_experiment and state['global_step'] % args.ckpt_freq == 0:
-                LOGGER.info('Saving checkpoint.')
-                torch.save(optimizer.state_dict(), exp_dir / 'optimizer.pt')
-                torch.save(model.state_dict(), exp_dir / 'model.pt')
-                torch.save(lr_scheduler.state_dict(), exp_dir / 'lr_scheduler.pt')
-                with (exp_dir / 'state.json').open('w') as fp:
-                    json.dump(state, fp)
-
         model.eval()
         losses = []
         for _, batch in enumerate(eval_dataloader):

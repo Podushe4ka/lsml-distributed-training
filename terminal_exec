@@ -1,0 +1,5 @@
+CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-fp32 -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision fp32 
+
+CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-bf16 -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision bf16
+
+CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-bf16-checkpoint -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision bf16 --activation-checkpointing
