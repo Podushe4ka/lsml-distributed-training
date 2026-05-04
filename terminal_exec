@@ -1,8 +1,13 @@
+Эксперимент 1
+
 CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-fp32 -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision fp32 2>&1 | tee logs/p1-fp32.log
 
 CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-bf16 -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision bf16 2>&1 | tee logs/p1-bf16.log
 
 CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-bf16-checkpoint -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision bf16 --activation-checkpointing 2>&1 | tee logs/p1-bf16-checkpoint.log
+
+
+Эксперимент 2
 
 export TORCHELASTIC_ERROR_FILE=error.json
 export OMP_NUM_THREADS=1
@@ -18,6 +23,7 @@ uv run torchrun \
   -m EleutherAI/pythia-160m \
   --seed 42 \
   --seq-length 512 \
+  --num-epochs 1 \
   -b 8 \
   --grad-accumulation-steps 8 \
   --sharding-strategy no_shard
@@ -36,6 +42,7 @@ uv run torchrun \
   -m EleutherAI/pythia-160m \
   --seed 42 \
   --seq-length 512 \
+  --num-epochs 1 \
   -b 8 \
   --grad-accumulation-steps 8 \
   --sharding-strategy shard_grad_op
@@ -49,7 +56,76 @@ uv run torchrun \
   --tee 3 \
   --log-dir logs \
   scripts/train_fsdp.py \
-  -e hw2-full-shard \
+  -e p2-full-shard \
+  -d wikitext-103-v1 \
+  -m EleutherAI/pythia-160m \
+  --seed 42 \
+  --seq-length 512 \
+  --num-epochs 1 \
+  -b 8 \
+  --grad-accumulation-steps 8 \
+  --sharding-strategy full_shard
+
+
+
+
+
+
+
+
+
+
+
+Эксперимент 4
+
+export TORCHELASTIC_ERROR_FILE=error.json
+export OMP_NUM_THREADS=1
+export CUDA_VISIBLE_DEVICES=0
+uv run torchrun \
+  --standalone \
+  --nproc-per-node gpu \
+  --tee 3 \
+  --log-dir logs \
+  scripts/train_fsdp.py \
+  -e p4-one-gpu \
+  -d wikitext-103-v1 \
+  -m EleutherAI/pythia-160m \
+  --seed 42 \
+  --seq-length 512 \
+  --num-epochs 1 \
+  -b 32 \
+  --grad-accumulation-steps 8 \
+  --sharding-strategy full_shard
+
+export TORCHELASTIC_ERROR_FILE=error.json
+export OMP_NUM_THREADS=1
+export CUDA_VISIBLE_DEVICES=0,1
+uv run torchrun \
+  --standalone \
+  --nproc-per-node gpu \
+  --tee 3 \
+  --log-dir logs \
+  scripts/train_fsdp.py \
+  -e p4-two-gpu \
+  -d wikitext-103-v1 \
+  -m EleutherAI/pythia-160m \
+  --seed 42 \
+  --seq-length 512 \
+  --num-epochs 1 \
+  -b 16 \
+  --grad-accumulation-steps 8 \
+  --sharding-strategy full_shard
+
+export TORCHELASTIC_ERROR_FILE=error.json
+export OMP_NUM_THREADS=1
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+uv run torchrun \
+  --standalone \
+  --nproc-per-node gpu \
+  --tee 3 \
+  --log-dir logs \
+  scripts/train_fsdp.py \
+  -e p4-four-gpu \
   -d wikitext-103-v1 \
   -m EleutherAI/pythia-160m \
   --seed 42 \
