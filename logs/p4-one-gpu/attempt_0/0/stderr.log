@@ -1,0 +1,23 @@
+[rank=0] [2026-05-04 13:06:52,180] INFO:Training 162322944 model parameters
+[rank=0] [2026-05-04 13:06:53,296] INFO:Initialized model uses 0.33080729600000003gb
+Using the latest cached version of the dataset since wikitext-103-v1 couldn't be found on the Hugging Face Hub
+[rank=0] [2026-05-04 13:06:53,963] WARNING:Using the latest cached version of the dataset since wikitext-103-v1 couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'default' at /data/shared_ml/huggingface/datasets/wikitext-103-v1/default/0.0.0/7c1040a21420bed1 (last modified on Thu Apr 30 21:06:53 2026).
+[rank=0] [2026-05-04 13:06:53,964] WARNING:Found the latest cached dataset configuration 'default' at /data/shared_ml/huggingface/datasets/wikitext-103-v1/default/0.0.0/7c1040a21420bed1 (last modified on Thu Apr 30 21:06:53 2026).
+[rank=0] [2026-05-04 13:06:57,146] INFO:6851 train batches per epoch, 360 eval batches per epoch
+[rank=0] [2026-05-04 13:06:57,146] INFO:Creating experiment root directory
+[rank=0] [2026-05-04 13:06:57,147] INFO:Begin epoch 0 at step 0
+  0%|          | 0/6851 [00:00<?, ?it/s][rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/dbaryshev/lsml-distributed-training/scripts/train_fsdp.py", line 356, in <module>
+[rank0]:     main(args)
+[rank0]:   File "/data/shared_ml/dbaryshev/.venv/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+[rank0]:     return f(*args, **kwargs)
+[rank0]:   File "/home/dbaryshev/lsml-distributed-training/scripts/train_fsdp.py", line 264, in main
+[rank0]:     sync_ctx = model.no_sync() if (is_ddp and not do_update and args.grad_accumulation_steps > 1) else nullcontext()
+[rank0]:   File "/data/shared_ml/dbaryshev/.venv/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 405, in __getattr__
+[rank0]:     return getattr(self._orig_mod, name)
+[rank0]:   File "/data/shared_ml/dbaryshev/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1962, in __getattr__
+[rank0]:     raise AttributeError(
+[rank0]: AttributeError: 'GPTNeoXForCausalLM' object has no attribute 'no_sync'
+  0%|          | 0/6851 [00:00<?, ?it/s]
+[rank0]:[W504 13:06:58.904429654 ProcessGroupNCCL.cpp:1538] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
