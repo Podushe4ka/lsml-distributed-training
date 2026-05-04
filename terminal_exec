@@ -10,7 +10,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 uv run torchrun \
   --standalone \
   --nproc-per-node gpu \
-  --redirects 3 \
+  --tee 3 \
   --log-dir logs \
   scripts/train_fsdp.py \
   -e p2-no-shard \
@@ -18,7 +18,7 @@ uv run torchrun \
   -m EleutherAI/pythia-160m \
   --seed 42 \
   --seq-length 512 \
-  -b 32 \
+  -b 8 \
   --grad-accumulation-steps 8 \
   --sharding-strategy no_shard
 
@@ -28,7 +28,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 uv run torchrun \
   --standalone \
   --nproc-per-node gpu \
-  --redirects 3 \
+  --tee 3 \
   --log-dir logs \
   scripts/train_fsdp.py \
   -e p2-shard-grad-op \
@@ -36,7 +36,7 @@ uv run torchrun \
   -m EleutherAI/pythia-160m \
   --seed 42 \
   --seq-length 512 \
-  -b 32 \
+  -b 8 \
   --grad-accumulation-steps 8 \
   --sharding-strategy shard_grad_op
 
@@ -46,7 +46,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 uv run torchrun \
   --standalone \
   --nproc-per-node gpu \
-  --redirects 3 \
+  --tee 3 \
   --log-dir logs \
   scripts/train_fsdp.py \
   -e hw2-full-shard \
@@ -55,6 +55,6 @@ uv run torchrun \
   --seed 42 \
   --seq-length 512 \
   --num-epochs 1 \
-  -b 32 \
+  -b 8 \
   --grad-accumulation-steps 8 \
   --sharding-strategy full_shard
