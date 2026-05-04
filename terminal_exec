@@ -1,3 +1,5 @@
+source .env && make vendor
+
 Эксперимент 1
 
 CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-fp32 -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision fp32 2>&1 | tee logs/p1-fp32.log
@@ -5,7 +7,6 @@ CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherA
 CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-bf16 -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision bf16 2>&1 | tee logs/p1-bf16.log
 
 CUDA_VISIBLE_DEVICES=0 ./scripts/train_single.py -d wikitext-103-v1 -m EleutherAI/pythia-160m -e p1-bf16-checkpoint -s 512 -b 32 --grad-accumulation-steps 8 --num-epochs 1 --seed 42 --precision bf16 --activation-checkpointing 2>&1 | tee logs/p1-bf16-checkpoint.log
-
 
 Эксперимент 2
 
@@ -123,12 +124,6 @@ uv run torchrun \
   --grad-accumulation-steps 8 \
   --cpu-offload \
   --activation-checkpointing
-
-
-
-
-
-
 
 Эксперимент 4
 
