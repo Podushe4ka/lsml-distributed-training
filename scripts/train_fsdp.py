@@ -20,6 +20,7 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import AutoConfig, AutoModelForCausalLM, default_data_collator
+from contextlib import nullcontext
 
 from common import LocalTimer, get_mem_stats, load_and_preprocess_data, rank0_first
 
@@ -261,8 +262,12 @@ def main(args: argparse.Namespace) -> None:  # noqa: C901, PLR0915, PLR0912
             do_update = ((i_step + 1) % args.grad_accumulation_steps == 0) or (i_step + 1 == len(dataloader))
             if not is_ddp:
                 model.set_requires_gradient_sync(do_update or args.grad_accumulation_steps == 1, recurse=True)  # type: ignore[attr-defined]
-            sync_ctx = model.no_sync() if (is_ddp and not do_update and args.grad_accumulation_steps > 1) else nullcontext()
-
+            
+            sync_ctx = (
+                model.no_sync()
+                if (not do_update and args.grad_accumulation_steps > 1 and hasattr(model, "no_sync"))
+                else nullcontext()
+            )
             with sync_ctx:
                 with timers['forward']:
                     outputs = model(**batch)

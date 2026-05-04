@@ -66,9 +66,63 @@ uv run torchrun \
   --grad-accumulation-steps 8 \
   --sharding-strategy full_shard
 
+Эксперимент 3
 
+export TORCHELASTIC_ERROR_FILE=error.json
+export OMP_NUM_THREADS=1
+export CUDA_VISIBLE_DEVICES=0,1
+uv run torchrun \
+ --standalone \
+ --nproc-per-node gpu \
+  --tee 3 --log-dir logs \
+  scripts/train_fsdp_cpu_offload.py \
+  -e p3-full-shard \
+  -d wikitext-103-v1 \
+  -m EleutherAI/pythia-160m \
+  --seed 42 \
+  --seq-length 512 \
+  --num-epochs 1 \
+  -b 16 \
+  --grad-accumulation-steps 8
 
+export TORCHELASTIC_ERROR_FILE=error.json
+export OMP_NUM_THREADS=1
+export CUDA_VISIBLE_DEVICES=0,1
+uv run torchrun \
+  --standalone \
+  --nproc-per-node gpu \
+  --tee 3 \
+  --log-dir logs \
+  scripts/train_fsdp_cpu_offload.py \
+  -e p3-full-shard-cpuoffload \
+  -d wikitext-103-v1 \
+  -m EleutherAI/pythia-160m \
+  --seed 42 \
+  --seq-length 512 \
+  --num-epochs 1 \
+  -b 16 \
+  --grad-accumulation-steps 8 \
+  --cpu-offload
 
+export TORCHELASTIC_ERROR_FILE=error.json
+export OMP_NUM_THREADS=1
+export CUDA_VISIBLE_DEVICES=0,1
+uv run torchrun \
+  --standalone \
+  --nproc-per-node gpu \
+  --tee 3 \
+  --log-dir logs \
+  scripts/train_fsdp_cpu_offload.py \
+  -e p3-full-shard-cpuoffload-ac \
+  -d wikitext-103-v1 \
+  -m EleutherAI/pythia-160m \
+  --seed 42 \
+  --seq-length 512 \
+  --num-epochs 1 \
+  -b 16 \
+  --grad-accumulation-steps 8 \
+  --cpu-offload \
+  --activation-checkpointing
 
 
 
