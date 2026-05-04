@@ -1,0 +1,10 @@
+[rank=1] [2026-05-04 15:51:45,822] INFO:Training 162322944 model parameters
+[rank=1] [2026-05-04 15:51:47,144] INFO:Initialized model uses 0.33080729600000003gb
+[rank=1] [2026-05-04 15:51:47,178] INFO:After DDP: model uses 0.655865856gb
+Using the latest cached version of the dataset since wikitext-103-v1 couldn't be found on the Hugging Face Hub
+[rank=1] [2026-05-04 15:51:50,864] WARNING:Using the latest cached version of the dataset since wikitext-103-v1 couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'default' at /data/shared_ml/huggingface/datasets/wikitext-103-v1/default/0.0.0/7c1040a21420bed1 (last modified on Thu Apr 30 21:06:53 2026).
+[rank=1] [2026-05-04 15:51:50,865] WARNING:Found the latest cached dataset configuration 'default' at /data/shared_ml/huggingface/datasets/wikitext-103-v1/default/0.0.0/7c1040a21420bed1 (last modified on Thu Apr 30 21:06:53 2026).
+[rank=1] [2026-05-04 15:51:53,407] INFO:6851 train batches per epoch, 360 eval batches per epoch
+[rank=1] [2026-05-04 15:51:53,407] INFO:Creating experiment root directory
+[rank=1] [2026-05-04 15:51:53,408] INFO:Begin epoch 0 at step 0
